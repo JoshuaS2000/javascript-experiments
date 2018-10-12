@@ -1,0 +1,144 @@
+<html>
+
+<head>
+<script>
+
+yellowStartX = 292;
+yellowStartY = 384;
+yellowStartExitX = 305;
+yellowStartExitY = 458;
+redStartX = 186;
+redStartY = 76;
+redStartExitX = 179;
+redStartExitY = 3;
+turn = 0;
+yellowTurn = 0;
+redTurn = 1;
+var yellowPieces = {};
+var redPieces = {};
+
+
+//c.hidden = true;
+
+function redraw(){
+	ctx.drawImage(board,0,0,512,510);
+	for(i = 1; i <= 4; i++){
+		ctx.drawImage(yellowImage,yellowPieces[i+"X"],yellowPieces[i+"Y"],30,40);
+	}
+	
+	for(i = 1; i <= 4; i++){
+		ctx.drawImage(redImage,redPieces[i+"X"],redPieces[i+"Y"],30,40);
+	}
+}
+
+function load(){
+
+c = document.getElementById("display");
+ctx = c.getContext("2d");
+board = document.getElementById("board");
+redImage = document.getElementById("redPiece");
+blueImage = document.getElementById("bluePiece");
+greenImage = document.getElementById("greenPiece");
+yellowImage = document.getElementById("yellowPiece");
+
+for(i = 1; i <= 4; i++){ 
+	yellowPieces[i+"X"] = yellowStartX;
+	yellowPieces[i+"Y"] = yellowStartY;
+}
+for(i = 1; i <= 4; i++){ 
+	redPieces[i+"X"] = redStartX;
+	redPieces[i+"Y"] = redStartY;
+}
+
+redraw();
+
+window.setInterval(function(){
+
+if(turn == 0){
+	var notInStart
+
+	document.getElementById("log").innerHTML="It's Yellow's turn!\n\n";
+	
+	//check if we have a piece not in start...
+	for(i = 1; i <= 4; i++){ 
+		if(!(yellowPieces[i+"X"] == yellowStartX && yellowPieces[i+"Y"] == yellowStartY)){
+			notInStart = true;
+			break;
+		}
+	}
+	if(!notInStart){
+	document.getElementById("log").innerHTML+="Yellow doesn't have any pieces out of Start...\n If they draw a 1 or a 2, they can move.\n\n";
+	drawnCard = Math.floor(Math.random()* 11);
+	document.getElementById("log").innerHTML += "Yellow draws a " + drawnCard + "!\n\n";
+	if(drawnCard == 1 || drawnCard == 2){
+		document.getElementById("log").innerHTML+="Yellow moves a piece from start.\n\n";
+		yellowPieces["1X"] = yellowStartExitX;
+		yellowPieces["1Y"] = yellowStartExitY;
+		redraw();
+	}else{
+		document.getElementById("log").innerHTML+="Yellow cannot move!\n\n";
+	}
+	}else{
+		//TODO: movement
+	}
+	setTimeout("",1000);
+	turn = 1;
+}else if(turn == 1){
+	var notInStart
+
+	document.getElementById("log").innerHTML="It's Red's turn!\n\n";
+	
+	//check if we have a piece not in start...
+	for(i = 1; i <= 4; i++){ 
+		if(!(redPieces[i+"X"] == redStartX && redPieces[i+"Y"] == redStartY)){
+			notInStart = true;
+			break;
+		}
+	}
+	if(!notInStart){
+	document.getElementById("log").innerHTML+="Red doesn't have any pieces out of Start...\n If they draw a 1 or a 2, they can move.\n\n";
+	drawnCard = Math.floor(Math.random()* 11);
+	document.getElementById("log").innerHTML += "Red draws a " + drawnCard + "!\n\n";
+	if(drawnCard == 1 || drawnCard == 2){
+		document.getElementById("log").innerHTML+="Red moves a piece from start.\n\n";
+		redPieces["1X"] = redStartExitX;
+		redPieces["1Y"] = redStartExitY;
+		redraw();
+	}else{
+		document.getElementById("log").innerHTML+="Red cannot move!\n\n";
+	}
+	}else{
+		//TODO: movement
+	}
+	setTimeout("",1000);
+	turn = 0;
+}
+
+},500);
+
+//ctx.drawImage();
+}
+
+function scroll(){
+	self.scrollTop = self.scrollHeight;
+}
+
+</script>
+<title>Welcome to Sorry!</title>
+</head>
+
+<body onLoad="load()">
+<img src="gr/game/red.png" id="redPiece" width="0" height="0">
+<img src="gr/game/blue.png" id="bluePiece" width="0" height="0">
+<img src="gr/game/green.png" id="greenPiece" width="0" height="0">
+<img src="gr/game/yellow.png" id="yellowPiece" width="0" height="0">
+<img src="gr/game/board.png" id="board" width="0" height="0">
+<img src="gr/game/loading.png" id="loading" width="512" height="510" hidden>
+
+<span><canvas width="512" height="510" id="display"></canvas><textarea cols="50" rows="50" id="log"></textarea></span>
+</body>
+
+<footer>
+<p align="center"><i>Last updated 11/29/17 by Joshua S. Version a0.0.1 -- refer to changelog.txt</i></p>
+</footer>
+</html>

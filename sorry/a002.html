@@ -1,0 +1,225 @@
+<html>
+
+<head>
+<script>
+
+yellowStartX = 292;
+yellowStartY = 384;
+yellowStartExitX = 305;
+yellowStartExitY = 458;
+redStartX = 186;
+redStartY = 76;
+redStartExitX = 179;
+redStartExitY = 3;
+turn = 0;
+yellowTurn = 0;
+redTurn = 1;
+var yellowPieces = {};
+var redPieces = {};
+
+charStr = ""
+
+gameMode = "running"; //Make this have more states, but for now it's either "running" or "waiting".
+
+document.onkeydown = function(evt) {
+	evt = evt || window.event;
+	var charCode = evt.keyCode || evt.which;
+	charStr = String.fromCharCode(charCode);
+};
+	
+function checkKeyPress(){	
+	gameMode = "waiting";
+	if(charStr == ""){
+		requestAnimationFrame(checkKeyPress);
+	}else{
+		gameMode = "running";
+		charStr = "";
+	}
+}
+	
+//c.hidden = true;
+
+function redraw(){
+	ctx.drawImage(board,0,0,512,510);
+	for(i = 1; i <= 4; i++){
+		ctx.drawImage(yellowImage,yellowPieces[i+"X"],yellowPieces[i+"Y"],30,40);
+	}
+	
+	for(i = 1; i <= 4; i++){
+		ctx.drawImage(redImage,redPieces[i+"X"],redPieces[i+"Y"],30,40);
+	}
+}
+
+function load(){
+
+c = document.getElementById("display");
+ctx = c.getContext("2d");
+board = document.getElementById("board");
+redImage = document.getElementById("redPiece");
+blueImage = document.getElementById("bluePiece");
+greenImage = document.getElementById("greenPiece");
+yellowImage = document.getElementById("yellowPiece");
+
+for(i = 1; i <= 4; i++){ 
+	yellowPieces[i+"X"] = yellowStartX;
+	yellowPieces[i+"Y"] = yellowStartY;
+}
+for(i = 1; i <= 4; i++){ 
+	redPieces[i+"X"] = redStartX;
+	redPieces[i+"Y"] = redStartY;
+}
+
+redraw();
+
+window.setInterval(function(){
+
+if(gameMode == "running"){
+	if(turn == 0){
+		var notInStart
+
+		document.getElementById("log").innerHTML="It's Yellow's turn!\n\n";
+		
+		//check if we have a piece not in start...
+		for(i = 1; i <= 4; i++){ 
+			if(!(yellowPieces[i+"X"] == yellowStartX && yellowPieces[i+"Y"] == yellowStartY)){
+				notInStart = true;
+				break;
+			}
+		}
+		drawnCard = 1;//Math.floor(Math.random()* 11);
+		if(!notInStart){
+		document.getElementById("log").innerHTML+="Yellow doesn't have any pieces out of Start...\n If they draw a 1 or a 2, they can move.\n\n";
+		document.getElementById("log").innerHTML += "Yellow draws a " + ((!drawnCard) ? "Sorry! card" : drawnCard) + "!\n\n";
+		if(drawnCard == 1 || drawnCard == 2){
+			document.getElementById("log").innerHTML+="Yellow moves a piece from start.\n\n";
+			yellowPieces["1X"] = yellowStartExitX;
+			yellowPieces["1Y"] = yellowStartExitY;
+			redraw();
+		}else if(drawnCard == 0){
+			document.getElementById("log").innerHTML+="Yellow needs to pick an opposing piece to knock to start!\n\n";
+		}else{
+			document.getElementById("log").innerHTML+="Yellow cannot move!\n\n";
+		}
+		}else{
+			//TODO: movement
+		}
+		document.getElementById("log").innerHTML+="Press a key to continue...";
+		requestAnimationFrame(checkKeyPress);
+		turn = 1;
+	}else if(turn == 1){
+		var notInStart
+		var yellowPieceOut
+
+		document.getElementById("log").innerHTML="It's Red's turn!\n\n";
+		
+		//check if we have a piece not in start...
+		for(i = 1; i <= 4; i++){ 
+			if(!(redPieces[i+"X"] == redStartX && redPieces[i+"Y"] == redStartY)){
+				notInStart = true;
+				break;
+			}
+		}
+		drawnCard = 0;//Math.floor(Math.random()* 11);
+		if(!notInStart){
+		document.getElementById("log").innerHTML+="Red doesn't have any pieces out of Start...\n If they draw a 1 or a 2, they can move.\n\n";
+		document.getElementById("log").innerHTML += "Red draws a " + ((!drawnCard) ? "Sorry! card" : drawnCard) + "!\n\n";
+		if(drawnCard == 1 || drawnCard == 2){
+			document.getElementById("log").innerHTML+="Red moves a piece from start.\n\n";
+			redPieces["1X"] = redStartExitX;
+			redPieces["1Y"] = redStartExitY;
+			redraw();
+		}else if(drawnCard == 0){
+			document.getElementById("log").innerHTML+="Red needs to pick an opposing piece to knock to start!\n\n";
+			if(!(yellowPieces[1+"X"] == yellowStartX && yellowPieces[1+"Y"] == yellowStartY) || !(yellowPieces[2+"X"] == yellowStartX && yellowPieces[2+"Y"] == yellowStartY) || !(yellowPieces[3+"X"] == yellowStartX && yellowPieces[3+"Y"] == yellowStartY) || !(yellowPieces[4+"X"] == yellowStartX && yellowPieces[4+"Y"] == yellowStartY)){
+				yellowPieceOut = true;
+			}
+			if(!yellowPieceOut){
+				document.getElementById("log").innerHTML+="...but there are none!\n\n";
+			}else{
+				document.getElementById("log").innerHTML+="Red, please press "+ ((yellowPieces[1+"X"] == yellowStartX && yellowPieces[1+"Y"] == yellowStartY) ? "" : "1, ") + ((yellowPieces[2+"X"] == yellowStartX && yellowPieces[2+"Y"] == yellowStartY) ? "" : " 2, ") + ((yellowPieces[3+"X"] == yellowStartX && yellowPieces[3+"Y"] == yellowStartY) ? "" : " 3, ") + ((yellowPieces[4+"X"] == yellowStartX && yellowPieces[4+"Y"] == yellowStartY) ? "" : " 4, ") + "on the keyboard to pick an opposing player";
+				gameMode = "selecting";
+				selectingInterval = setInterval(function(){
+					if(charStr == '1' && (!(yellowPieces[1+"X"] == yellowStartX && yellowPieces[1+"Y"] == yellowStartY))){
+						redPieces["1X"] = yellowPieces["1X"];
+						redPieces["1Y"] = yellowPieces["1Y"];
+						yellowPieces["1X"] = yellowStartX;
+						yellowPieces["1Y"] = yellowStartY;
+						gameMode = "waiting"
+						clearInterval(selectingInterval);
+					}
+					if(charStr == '2' && (!(yellowPieces[2+"X"] == yellowStartX && yellowPieces[2+"Y"] == yellowStartY))){
+						redPieces["2X"] = yellowPieces["2X"];
+						redPieces["2Y"] = yellowPieces["2Y"];
+						yellowPieces["2X"] = yellowStartX;
+						yellowPieces["2Y"] = yellowStartY;
+						gameMode = "waiting"
+						clearInterval(selectingInterval);
+					}
+					if(charStr == '3' && (!(yellowPieces[3+"X"] == yellowStartX && yellowPieces[3+"Y"] == yellowStartY))){
+						redPieces["3X"] = yellowPieces["3X"];
+						redPieces["3Y"] = yellowPieces["3Y"];
+						yellowPieces["3X"] = yellowStartX;
+						yellowPieces["3Y"] = yellowStartY;
+						gameMode = "waiting"
+						clearInterval(selectingInterval);
+					}
+					if(charStr == '4' && (!(yellowPieces[4+"X"] == yellowStartX && yellowPieces[4+"Y"] == yellowStartY))){
+						redPieces["4X"] = yellowPieces["4X"];
+						redPieces["4Y"] = yellowPieces["4Y"];
+						yellowPieces["4X"] = yellowStartX;
+						yellowPieces["4Y"] = yellowStartY;
+						gameMode = "waiting"
+						clearInterval(selectingInterval);
+					}
+				},0);
+			}
+		}else{
+			document.getElementById("log").innerHTML+="Red cannot move!\n\n";
+		}
+		}else{
+			//TODO: movement
+		}
+		
+		if(gameMode != "selecting"){
+			document.getElementById("log").innerHTML+="Press a key to continue...";
+		}
+		
+		waitingInterval = setInterval(function(){
+		if(charStr != '' && gameMode != "selecting"){
+			turn = 0;
+			gameMode = "running";
+			charStr = '';
+			clearInterval(waitingInterval);
+		}
+		},0);
+	}
+}
+
+},500);
+
+//ctx.drawImage();
+}
+
+function scroll(){
+	self.scrollTop = self.scrollHeight;
+}
+
+</script>
+<title>Welcome to Sorry!</title>
+</head>
+
+<body onLoad="load()">
+<img src="gr/game/red.png" id="redPiece" width="0" height="0">
+<img src="gr/game/blue.png" id="bluePiece" width="0" height="0">
+<img src="gr/game/green.png" id="greenPiece" width="0" height="0">
+<img src="gr/game/yellow.png" id="yellowPiece" width="0" height="0">
+<img src="gr/game/board.png" id="board" width="0" height="0">
+<img src="gr/game/loading.png" id="loading" width="512" height="510" hidden>
+
+<span><canvas width="512" height="510" id="display"></canvas><textarea cols="50" rows="50" id="log"></textarea></span>
+</body>
+
+<footer>
+<p align="center"><i>Last updated 11/29/17 by Joshua S. Version a0.0.2 -- refer to changelog.txt</i></p>
+</footer>
+</html>

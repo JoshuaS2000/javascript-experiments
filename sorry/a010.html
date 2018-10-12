@@ -1,0 +1,1109 @@
+<html>
+
+<head>
+<script>
+
+yellowStartX = 292;
+yellowStartY = 384;
+yellowStartExitX = 305;
+yellowStartExitY = 458;
+redStartX = 186;
+redStartY = 76;
+redStartExitX = 179;
+redStartExitY = 3;
+turn = 0;
+yellowTurn = 0;
+redTurn = 1;
+var yellowPieces = {};
+var redPieces = {};
+
+var yellowPiecesGrid = {};
+var redPiecesGrid = {};
+
+var spaceFlags = new Array(); //flag 1 = type, flag 2 = color
+
+spaceFlags[2] = [1,0]
+
+
+
+
+var spaces = new Array();
+
+spaces[0] = [5,5]
+spaces[1] = [47,5]
+spaces[2] = [94,5]
+spaces[3] = [141,5]
+spaces[4] = [180,5]
+spaces[5] = [227,5]
+spaces[6] = [274,5]
+spaces[7] = [305,5]
+spaces[8] = [343,5]
+spaces[9] = [378,5]
+spaces[10] = [412,5]
+spaces[11] = [454,5]
+
+spaces[12] = [454,45]
+spaces[13] = [454,86]
+spaces[14] = [454,126]
+spaces[15] = [454,166]
+spaces[16] = [454,200]
+spaces[17] = [454,235]
+spaces[18] = [454,269]
+spaces[19] = [454,304]
+spaces[20] = [454,336]
+spaces[21] = [454,379]
+spaces[22] = [454,413]
+
+spaces[23] = [454,456]
+spaces[24] = [406,456]
+spaces[25] = [354,456]
+spaces[26] = [310,456]
+spaces[27] = [263,456]
+spaces[28] = [210,456]
+spaces[29] = [159,456]
+spaces[30] = [112,456]
+spaces[31] = [76,456]
+spaces[32] = [44,456]
+
+spaces[33] = [5,456]
+spaces[34] = [5,409]
+spaces[35] = [5,368]
+spaces[36] = [5,324]
+spaces[37] = [5,280]
+spaces[38] = [5,244]
+spaces[39] = [5,199]
+spaces[40] = [5,159]
+spaces[41] = [5,119]
+spaces[42] = [5,75]
+spaces[43] = [5,35]
+
+spaces["redStart"] = [186,76];
+
+charStr = ""
+
+cards = [0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,7,7,7,7,8,8,8,8,10,10,10,10,11,11,11,11,12,12,12,12];
+currentCards = cards.slice(0,cards.length);
+
+gameMode = "running"; //Make this have more states, but for now it's either "running" or "waiting".
+
+document.onkeydown = function(evt) {
+	evt = evt || window.event;
+	var charCode = evt.keyCode || evt.which;
+	charStr = String.fromCharCode(charCode);
+};
+	
+function checkKeyPress(){	
+	gameMode = "waiting";
+	if(charStr == ""){
+		requestAnimationFrame(checkKeyPress);
+	}else{
+		gameMode = "running";
+		charStr = "";
+	}
+}
+	
+function wait(){
+	document.getElementById("log").innerHTML+="Check the box to continue";
+	document.confirm.hidden = false;
+	waitingInterval = setInterval(function(){
+	if(document.confirm.confirmcheck.checked && gameMode == "waiting"){
+		document.confirm.confirmcheck.checked = false;
+		document.confirm.hidden = true;
+		turn = (turn) ? 0 : 1;
+		gameMode = "running";
+		charStr = '';
+		clearInterval(waitingInterval);
+	}
+	},0);
+}
+	
+//c.hidden = true;
+
+function redraw(){
+	ctx.drawImage(board,0,0,512,510);
+	for(i = 1; i <= 4; i++){
+		var img = document.getElementById("yellowPiece"+i)
+		ctx.drawImage(img,yellowPieces[i+"X"],yellowPieces[i+"Y"],30,40);
+	}
+	
+	for(i = 1; i <= 4; i++){
+		var img = document.getElementById("redPiece"+i)
+		ctx.drawImage(img,redPieces[i+"X"],redPieces[i+"Y"],30,40);
+	}
+}
+
+function load(){
+
+//"shuffle" the "cards"
+for(i=0; i < currentCards.length; i++){
+	currentCards.splice(Math.floor(Math.random() * currentCards.length),0,currentCards[i]);
+	//alert(currentCards[i]);
+	currentCards.splice(i,1);
+}
+
+c = document.getElementById("display");
+ctx = c.getContext("2d");
+board = document.getElementById("board");
+redImage = document.getElementById("redPiece");
+blueImage = document.getElementById("bluePiece");
+greenImage = document.getElementById("greenPiece");
+yellowImage = document.getElementById("yellowPiece");
+
+for(i = 1; i <= 4; i++){ 
+	//temp=spaces[10][0]
+	yellowPieces[i+"X"] = yellowStartX;
+	yellowPieces[i+"Y"] = yellowStartY;
+}
+for(i = 1; i <= 4; i++){ 
+	redPieces[i+"X"] = redStartX;
+	redPieces[i+"Y"] = redStartY;
+}
+
+redraw();
+
+space=0;
+
+window.setInterval(function(){
+charStr = '';
+redraw();
+if(gameMode == "running"){
+	if(turn == 0){
+		document.getElementById("playertext").innerHTML = "Player 1 - Yellow"
+		var notInStart
+		var redPieceOut
+
+		document.getElementById("log").innerHTML="It's Yellow's turn!\n\n";
+		
+		//check if we have a piece not in start...
+		for(i = 1; i <= 4; i++){ 
+			if(!(yellowPieces[i+"X"] == yellowStartX && yellowPieces[i+"Y"] == yellowStartY)){
+				notInStart = true;
+				break;
+			}
+		}
+		drawnCard = currentCards.splice(0,1);
+		document.getElementById("card").src="gr/game/cards/"+(drawnCard!=0?drawnCard:"SORRY")+".jpg";
+		if(!notInStart){
+		document.getElementById("log").innerHTML+="Yellow doesn't have any pieces out of Start...\n If they draw a 1 or a 2, they can move.\n\n";
+		document.getElementById("log").innerHTML += "Yellow draws a " + ((drawnCard==0) ? "Sorry! card" : drawnCard) + "!\n\n";
+		if(drawnCard == 1 || drawnCard == 2){
+			document.getElementById("log").innerHTML+="Yellow moves a piece from start.\n\n";
+			document.getElementById("log").innerHTML+="Please pick a piece that is in Start by pressing 1,2,3, or 4\n\n";
+						
+			gameMode = "selecting";
+			document.pieceselect.hidden = false;
+				selectingInterval = setInterval(function(){
+					if(document.pieceselect.piece1.checked && ((yellowPieces["1X"] == yellowStartX && yellowPieces["1Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["1X"] = yellowStartExitX;
+						yellowPieces["1Y"] = yellowStartExitY;
+						yellowPiecesGrid[1] = 26;
+						gameMode = "waiting"
+						charStr = '';
+						if((yellowPieces["1X"] == redPieces["1X"] && yellowPieces["1Y"] == redPieces["1Y"])){
+							redPieces[1+"X"] = redStartX;
+							redPieces[1+"Y"] = redStartY;
+						}
+						if((yellowPieces["1X"] == redPieces["2X"] && yellowPieces["1Y"] == redPieces["2Y"])){
+							redPieces[2+"X"] = redStartX;
+							redPieces[2+"Y"] = redStartY;
+						}
+						if((yellowPieces["1X"] == redPieces["3X"] && yellowPieces["1Y"] == redPieces["3Y"])){
+							redPieces[3+"X"] = redStartX;
+							redPieces[3+"Y"] = redStartY;
+						}
+						if((yellowPieces["1X"] == redPieces["4X"] && yellowPieces["1Y"] == redPieces["4Y"])){
+							redPieces[4+"X"] = redStartX;
+							redPieces[4+"Y"] = redStartY;
+						}
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece2.checked && ((yellowPieces["2X"] == yellowStartX && yellowPieces["2Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["2X"] = yellowStartExitX;
+						yellowPieces["2Y"] = yellowStartExitY;
+						yellowPiecesGrid[2] = 26;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						if((yellowPieces["2X"] == redPieces["1X"] && yellowPieces["2Y"] == redPieces["1Y"])){
+							redPieces[1+"X"] = redStartX;
+							redPieces[1+"Y"] = redStartY;
+						}
+						if((yellowPieces["2X"] == redPieces["2X"] && yellowPieces["2Y"] == redPieces["2Y"])){
+							redPieces[2+"X"] = redStartX;
+							redPieces[2+"Y"] = redStartY;
+						}
+						if((yellowPieces["2X"] == redPieces["3X"] && yellowPieces["2Y"] == redPieces["3Y"])){
+							redPieces[3+"X"] = redStartX;
+							redPieces[3+"Y"] = redStartY;
+						}
+						if((yellowPieces["2X"] == redPieces["4X"] && yellowPieces["2Y"] == redPieces["4Y"])){
+							redPieces[4+"X"] = redStartX;
+							redPieces[4+"Y"] = redStartY;
+						}
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece3.checked && ((yellowPieces["3X"] == yellowStartX && yellowPieces["3Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["3X"] = yellowStartExitX;
+						yellowPieces["3Y"] = yellowStartExitY;
+						yellowPiecesGrid[3] = 26;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						if((yellowPieces["3X"] == redPieces["1X"] && yellowPieces["3Y"] == redPieces["1Y"])){
+							redPieces[1+"X"] = redStartX;
+							redPieces[1+"Y"] = redStartY;
+						}
+						if((yellowPieces["3X"] == redPieces["2X"] && yellowPieces["3Y"] == redPieces["2X"])){
+							redPieces[2+"X"] = redStartX;
+							redPieces[2+"Y"] = redStartY;
+						}
+						if((yellowPieces["3X"] == redPieces["3X"] && yellowPieces["3Y"] == redPieces["3X"])){
+							redPieces[3+"X"] = redStartX;
+							redPieces[3+"Y"] = redStartY;
+						}
+						if((yellowPieces["3X"] == redPieces["4X"] && yellowPieces["3Y"] == redPieces["4Y"])){
+							redPieces[4+"X"] = redStartX;
+							redPieces[4+"Y"] = redStartY;
+						}
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece4.checked && ((yellowPieces["4X"] == yellowStartX && yellowPieces["4Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["4X"] = yellowStartExitX;
+						yellowPieces["4Y"] = yellowStartExitY;
+						yellowPiecesGrid[4] = 26;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						if((yellowPieces["1X"] == redPieces["1X"] && yellowPieces["4Y"] == redPieces["1Y"])){
+							redPieces[1+"X"] = redStartX;
+							redPieces[1+"Y"] = redStartY;
+						}
+						if((yellowPieces["1X"] == redPieces["2X"] && yellowPieces["4Y"] == redPieces["2Y"])){
+							redPieces[2+"X"] = redStartX;
+							redPieces[2+"Y"] = redStartY;
+						}
+						if((yellowPieces["1X"] == redPieces["3X"] && yellowPieces["4Y"] == redPieces["3Y"])){
+							redPieces[3+"X"] = redStartX;
+							redPieces[3+"Y"] = redStartY;
+						}
+						if((yellowPieces["1X"] == redPieces["4X"] && yellowPieces["4Y"] == redPieces["4Y"])){
+							redPieces[4+"X"] = redStartX;
+							redPieces[4+"Y"] = redStartY;
+						}
+						clearInterval(selectingInterval);
+					}
+				},0);
+		}else if(drawnCard == 0){
+			document.getElementById("log").innerHTML+="Yellow needs to pick an opposing piece to knock to start!\n\n";
+			if(!(redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY) || !(redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY) || !(redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY) || !(redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY)){
+				redPieceOut = true;
+			}
+			if(!redPieceOut){
+				document.getElementById("log").innerHTML+="...but there are none!\n\n";
+			}else{
+				document.getElementById("log").innerHTML+="Yellow, please press "+ ((redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY) ? "" : "1, ") + ((redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY) ? "" : " 2, ") + ((redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY) ? "" : " 3, ") + ((redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY) ? "" : " 4, ") + "on the keyboard to pick an opposing player\n\n";
+				gameMode = "selecting";
+				document.pieceselect.hidden = false;
+				selectingInterval = setInterval(function(){
+					if(document.pieceselect.piece1.checked && (!(redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["1X"] = redPieces["1X"];
+						yellowPieces["1Y"] = redPieces["1Y"];
+						redPiecesGrid[1] = "redStart"
+						redPieces["1X"] = spaces[redPiecesGrid[1]][0];
+						redPieces["1Y"] = spaces[redPiecesGrid[1]][1];
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece2.checked && (!(redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["2X"] = redPieces["2X"];
+						yellowPieces["2Y"] = redPieces["2Y"];
+						redPiecesGrid[2] = "redStart"
+						redPieces["2X"] = spaces[redPiecesGrid[2]][0];
+						redPieces["2Y"] = spaces[redPiecesGrid[2]][1];
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece3.checked && (!(redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["3X"] = redPieces["3X"];
+						yellowPieces["3Y"] = redPieces["3Y"];
+						redPiecesGrid[3] = "redStart"
+						redPieces["3X"] = spaces[redPiecesGrid[3]][0];
+						redPieces["3Y"] = spaces[redPiecesGrid[3]][1];
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece4.checked && (!(redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						yellowPieces["4X"] = redPieces["4X"];
+						yellowPieces["4Y"] = redPieces["4Y"];
+						redPiecesGrid[4] = "redStart"
+						redPieces["4X"] = spaces[redPiecesGrid[4]][0];
+						redPieces["4Y"] = spaces[redPiecesGrid[4]][1];
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+				},0);
+			}
+		}else{
+			document.getElementById("log").innerHTML+="Yellow cannot move!\n\n";
+		}
+		}else{
+			document.innerHTML+="Yellow, please pick a piece to move."
+			//TODO: movement
+			gameMode = "selecting";
+			document.pieceselect.hidden = false;
+			if(drawnCard==0){
+			document.getElementById("log").innerHTML+="Yellow needs to pick an opposing piece to knock to start!\n\n";
+			if(!(redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY) || !(redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY) || !(redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY) || !(redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY)){
+				redPieceOut = true;
+			}
+			if(!redPieceOut){
+				document.getElementById("log").innerHTML+="...but there are none!\n\n";
+			}else{
+				selectingInterval = setInterval(function(){
+					if(document.pieceselect.piece1.checked && (!(yellowPieces[1+"X"] = yellowStartX && yellowPieces[1+"Y"] == yellowStartY))){
+					document.pieceselect.piece1.checked = false;
+					document.pieceselect.piece2.checked = false;
+					document.pieceselect.piece3.checked = false;
+					document.pieceselect.piece4.checked = false;
+					document.pieceselect.hidden = true;
+					document.getElementById("log").innerHTML+="Yellow, please press "+ ((redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY) ? "" : "1, ") + ((redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY) ? "" : " 2, ") + ((redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY) ? "" : " 3, ") + ((redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY) ? "" : " 4, ") + "on the keyboard to pick an opposing player\n\n";
+						clearInterval(selectingInterval);
+						charStr = '';
+						selectingInterval = setInterval(function(){
+								if(document.pieceselect.piece1.checked && (!(redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["1X"] = redPieces["1X"];
+									yellowPieces["1Y"] = redPieces["1Y"];
+									redPiecesGrid[1] = "redStart"
+									redPieces["1X"] = spaces[redPiecesGrid[1]][0];
+									redPieces["1Y"] = spaces[redPiecesGrid[1]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece2.checked && (!(redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["1X"] = redPieces["2X"];
+									yellowPieces["1Y"] = redPieces["2Y"];
+									redPiecesGrid[2] = "redStart"
+									redPieces["2X"] = spaces[redPiecesGrid[2]][0];
+									redPieces["2Y"] = spaces[redPiecesGrid[2]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece3.checked && (!(redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["1X"] = redPieces["3X"];
+									yellowPieces["1Y"] = redPieces["3Y"];
+									redPiecesGrid[3] = "redStart"
+									redPieces["3X"] = spaces[redPiecesGrid[3]][0];
+									redPieces["3Y"] = spaces[redPiecesGrid[3]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece4.checked && (!(redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["1X"] = redPieces["4X"];
+									yellowPieces["1Y"] = redPieces["4Y"];
+									redPiecesGrid[4] = "redStart"
+									redPieces["4X"] = spaces[redPiecesGrid[4]][0];
+									redPieces["4Y"] = spaces[redPiecesGrid[4]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+							},0);
+					}
+					if(document.pieceselect.piece2.checked && (!(yellowPieces[2+"X"] == yellowStartX && yellowPieces[2+"Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						document.getElementById("log").innerHTML+="Yellow, please press "+ ((redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY) ? "" : "1, ") + ((redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY) ? "" : " 2, ") + ((redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY) ? "" : " 3, ") + ((redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY) ? "" : " 4, ") + "on the keyboard to pick an opposing player";
+						clearInterval(selectingInterval);
+						charStr = '';
+						selectingInterval = setInterval(function(){
+								if(document.pieceselect.piece1.checked && (!(redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["2X"] = redPieces["1X"];
+									yellowPieces["2Y"] = redPieces["1Y"];
+									redPiecesGrid[1] = "redStart"
+									redPieces["1X"] = spaces[redPiecesGrid[1]][0];
+									redPieces["1Y"] = spaces[redPiecesGrid[1]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece2.checked && (!(redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["2X"] = redPieces["2X"];
+									yellowPieces["2Y"] = redPieces["2Y"];
+									redPiecesGrid[2] = "redStart"
+									redPieces["2X"] = spaces[redPiecesGrid[2]][0];
+									redPieces["2Y"] = spaces[redPiecesGrid[2]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece3.checked && (!(redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["2X"] = redPieces["3X"];
+									yellowPieces["2Y"] = redPieces["3Y"];
+									redPiecesGrid[3] = "redStart"
+									redPieces["3X"] = spaces[redPiecesGrid[3]][0];
+									redPieces["3Y"] = spaces[redPiecesGrid[3]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece4.checked && (!(redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["2X"] = redPieces["4X"];
+									yellowPieces["2Y"] = redPieces["4Y"];
+									redPiecesGrid[4] = "redStart"
+									redPieces["4X"] = spaces[redPiecesGrid[4]][0];
+									redPieces["4Y"] = spaces[redPiecesGrid[4]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+							},0);
+					}
+					if(document.pieceselect.piece3.checked && (!(yellowPieces[3+"X"] == yellowStartX && yellowPieces[3+"Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						document.getElementById("log").innerHTML+="Yellow, please press "+ ((redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY) ? "" : "1, ") + ((redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY) ? "" : " 2, ") + ((redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY) ? "" : " 3, ") + ((redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY) ? "" : " 4, ") + "on the keyboard to pick an opposing player\n\n";
+						clearInterval(selectingInterval);
+						charStr = '';
+						selectingInterval = setInterval(function(){
+								if(document.pieceselect.piece1.checked && (!(redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["3X"] = redPieces["1X"];
+									yellowPieces["3Y"] = redPieces["1Y"];
+									redPiecesGrid[1] = "redStart"
+									redPieces["1X"] = spaces[redPiecesGrid[1]][0];
+									redPieces["1Y"] = spaces[redPiecesGrid[1]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece2.checked && (!(redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["3X"] = redPieces["2X"];
+									yellowPieces["3Y"] = redPieces["2Y"];
+									redPiecesGrid[2] = "redStart"
+									redPieces["2X"] = spaces[redPiecesGrid[2]][0];
+									redPieces["2Y"] = spaces[redPiecesGrid[2]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece3.checked && (!(redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["3X"] = redPieces["3X"];
+									yellowPieces["3Y"] = redPieces["3Y"];
+									redPiecesGrid[3] = "redStart"
+									redPieces["3X"] = spaces[redPiecesGrid[3]][0];
+									redPieces["3Y"] = spaces[redPiecesGrid[3]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece4.checked && (!(redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["3X"] = redPieces["4X"];
+									yellowPieces["3Y"] = redPieces["4Y"];
+									redPiecesGrid[4] = "redStart"
+									redPieces["4X"] = spaces[redPiecesGrid[4]][0];
+									redPieces["4Y"] = spaces[redPiecesGrid[4]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+							},0);
+					}
+					if(document.pieceselect.piece4.checked && (!(yellowPieces[4+"X"] == yellowStartX && yellowPieces[4+"Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						document.getElementById("log").innerHTML+="Yellow, please press "+ ((redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY) ? "" : "1, ") + ((redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY) ? "" : " 2, ") + ((redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY) ? "" : " 3, ") + ((redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY) ? "" : " 4, ") + "on the keyboard to pick an opposing player\n\n";
+						clearInterval(selectingInterval);
+						charStr = '';
+						selectingInterval = setInterval(function(){
+								if(document.pieceselect.piece1.checked && (!(redPieces[1+"X"] == redStartX && redPieces[1+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["4X"] = redPieces["1X"];
+									yellowPieces["4Y"] = redPieces["1Y"];
+									redPiecesGrid[1] = "redStart"
+									redPieces["1X"] = spaces[yellowPiecesGrid[1]][0];
+									redPieces["1Y"] = spaces[yellowPiecesGrid[1]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece2.checked && (!(redPieces[2+"X"] == redStartX && redPieces[2+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["4X"] = redPieces["2X"];
+									yellowPieces["4Y"] = redPieces["2Y"];
+									redPiecesGrid[2] = "redStart"
+									redPieces["2X"] = spaces[yellowPiecesGrid[2]][0];
+									redPieces["2Y"] = spaces[yellowPiecesGrid[2]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece3.checked && (!(redPieces[3+"X"] == redStartX && redPieces[3+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["4X"] = redPieces["3X"];
+									yellowPieces["4Y"] = redPieces["3Y"];
+									redPiecesGrid[3] = "redStart"
+									redPieces["3X"] = spaces[yellowPiecesGrid[3]][0];
+									redPieces["3Y"] = spaces[yellowPiecesGrid[3]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+								if(document.pieceselect.piece4.checked && (!(redPieces[4+"X"] == redStartX && redPieces[4+"Y"] == redStartY))){
+									document.pieceselect.piece1.checked = false;
+									document.pieceselect.piece2.checked = false;
+									document.pieceselect.piece3.checked = false;
+									document.pieceselect.piece4.checked = false;
+									document.pieceselect.hidden = true;
+									yellowPieces["4X"] = redPieces["4X"];
+									yellowPieces["4Y"] = redPieces["4Y"];
+									redPiecesGrid[4] = "redStart"
+									redPieces["4X"] = spaces[yellowPiecesGrid[4]][0];
+									redPieces["4Y"] = spaces[yellowPiecesGrid[4]][1];
+									gameMode = "waiting"
+									charStr = '';
+									wait();
+									clearInterval(selectingInterval);
+								}
+							},0);
+					}
+				},0);
+				}
+			}else{
+				selectingInterval = setInterval(function(){
+				if(document.pieceselect.piece1.checked && ((yellowPieces[1+"X"] != yellowStartX && yellowPieces[1+"Y"] != yellowStartY))){
+					document.pieceselect.piece1.checked = false;
+					document.pieceselect.piece2.checked = false;
+					document.pieceselect.piece3.checked = false;
+					document.pieceselect.piece4.checked = false;
+					document.pieceselect.hidden = true;
+					if(Number(drawnCard)==4)
+						yellowPiecesGrid[1] = (yellowPiecesGrid[1] - Number(drawnCard)) % (spaces.length);
+					else if(Number(drawnCard)==4)
+						yellowPiecesGrid[1] = (yellowPiecesGrid[1] - Number(drawnCard)) % (spaces.length);
+					else
+						yellowPiecesGrid[1] = (yellowPiecesGrid[1] + Number(drawnCard)) % (spaces.length);
+					yellowPieces["1X"] = spaces[yellowPiecesGrid[1]][0];
+					yellowPieces["1Y"] = spaces[yellowPiecesGrid[1]][1];
+					
+					if((yellowPiecesGrid[1] == redPiecesGrid[1])){
+						redPiecesGrid[1] = "redStart";
+						redPieces["1X"] = spaces[redPiecesGrid[1]][0];
+						redPieces["1Y"] = spaces[redPiecesGrid[1]][1];
+					}
+					if((yellowPiecesGrid[1] == redPiecesGrid[2])){
+						redPiecesGrid[2] = "redStart";
+						redPieces["2X"] = spaces[redPiecesGrid[2]][0];
+						redPieces["2Y"] = spaces[redPiecesGrid[2]][1];
+					}
+					if((yellowPiecesGrid[1] == redPiecesGrid[3])){
+						redPiecesGrid[3] = "redStart";
+						redPieces["3X"] = spaces[redPiecesGrid[3]][0];
+						redPieces["3Y"] = spaces[redPiecesGrid[3]][1];
+					}
+					if((yellowPiecesGrid[1] == redPiecesGrid[4])){
+						redPiecesGrid[4] = "redStart";
+						redPieces["4X"] = spaces[redPiecesGrid[4]][0];
+						redPieces["4Y"] = spaces[redPiecesGrid[4]][1];
+					}
+					
+					gameMode = "waiting"
+					charStr = '';
+					wait();
+					clearInterval(selectingInterval);
+				}
+				if(document.pieceselect.piece2.checked && ((yellowPieces[2+"X"] != yellowStartX && yellowPieces[2+"Y"] != yellowStartY))){
+					document.pieceselect.piece1.checked = false;
+					document.pieceselect.piece2.checked = false;
+					document.pieceselect.piece3.checked = false;
+					document.pieceselect.piece4.checked = false;
+					document.pieceselect.hidden = true;
+					if(Number(drawnCard)==4)
+						yellowPiecesGrid[2] = (yellowPiecesGrid[2] - Number(drawnCard)) % (spaces.length);
+					else
+						yellowPiecesGrid[2] = (yellowPiecesGrid[2] + Number(drawnCard)) % (spaces.length);
+					yellowPieces["2X"] = spaces[yellowPiecesGrid[2]][0];
+					yellowPieces["2Y"] = spaces[yellowPiecesGrid[2]][1];
+					gameMode = "waiting"
+					charStr = '';
+					wait();
+					clearInterval(selectingInterval);
+				}
+				if(document.pieceselect.piece3.checked && ((yellowPieces[3+"X"] != yellowStartX && yellowPieces[3+"Y"] != yellowStartY))){
+					document.pieceselect.piece1.checked = false;
+					document.pieceselect.piece2.checked = false;
+					document.pieceselect.piece3.checked = false;
+					document.pieceselect.piece4.checked = false;
+					document.pieceselect.hidden = true;
+					if(Number(drawnCard)==4)
+						yellowPiecesGrid[3] = (yellowPiecesGrid[3] - Number(drawnCard)) % (spaces.length);
+					else
+						yellowPiecesGrid[3] = (yellowPiecesGrid[3] + Number(drawnCard)) % (spaces.length);
+					yellowPieces["3X"] = spaces[yellowPiecesGrid[3]][0];
+					yellowPieces["3Y"] = spaces[yellowPiecesGrid[3]][1];
+					gameMode = "waiting"
+					charStr = '';
+					wait();
+					clearInterval(selectingInterval);
+				}
+				if(document.pieceselect.piece4.checked && ((yellowPieces[4+"X"] != yellowStartX && yellowPieces[4+"Y"] != yellowStartY))){
+					document.pieceselect.piece1.checked = false;
+					document.pieceselect.piece2.checked = false;
+					document.pieceselect.piece3.checked = false;
+					document.pieceselect.piece4.checked = false;
+					document.pieceselect.hidden = true;
+					if(Number(drawnCard)==4)
+						yellowPiecesGrid[4] = (yellowPiecesGrid[4] - Number(drawnCard)) % (spaces.length);
+					else
+						yellowPiecesGrid[4] = (yellowPiecesGrid[4] + Number(drawnCard)) % (spaces.length);
+					yellowPieces["4X"] = spaces[yellowPiecesGrid[4]][0];
+					yellowPieces["4Y"] = spaces[yellowPiecesGrid[4]][1];
+					gameMode = "waiting"
+					charStr = '';
+					wait();
+					clearInterval(selectingInterval);
+				}
+				},0);
+			}
+		}
+		
+		if(gameMode == "running"){
+			gameMode = "waiting";
+			wait();
+		}
+		
+	}else if(turn == 1){
+		document.getElementById("playertext").innerHTML = "Player 2 - Red"
+		var notInStart
+		var yellowPieceOut
+
+		document.getElementById("log").innerHTML="It's Red's turn!\n\n";
+		
+		//check if we have a piece not in start...
+		for(i = 1; i <= 4; i++){ 
+			if(!(redPieces[i+"X"] == redStartX && redPieces[i+"Y"] == redStartY)){
+				notInStart = true;
+				break;
+			}
+		}
+		drawnCard = currentCards.splice(0,1);//Math.floor(Math.random()* 11);
+		document.getElementById("card").src="gr/game/cards/"+(drawnCard!=0?drawnCard:"SORRY")+".jpg";
+		if(!notInStart){
+		document.getElementById("log").innerHTML+="Red doesn't have any pieces out of Start...\n If they draw a 1 or a 2, they can move.\n\n";
+		document.getElementById("log").innerHTML += "Red draws a " + ((drawnCard==0) ? "Sorry! card" : drawnCard) + "!\n\n";
+		if(drawnCard == 1 || drawnCard == 2){
+			document.getElementById("log").innerHTML+="Red moves a piece from start.\n\n";
+			document.getElementById("log").innerHTML+="Please pick a piece that is in Start by pressing 1,2,3, or 4\n\n";
+			
+			gameMode = "selecting";
+			document.pieceselect.hidden = false;
+				selectingInterval = setInterval(function(){
+					if(document.pieceselect.piece1.checked && ((redPieces["1X"] == redStartX && redPieces["1Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["1X"] = redStartExitX;
+						redPieces["1Y"] = redStartExitY;
+						redPiecesGrid[1] = 4;
+						gameMode = "waiting"
+						charStr = '';
+						if((redPieces["1X"] == yellowPieces["1X"] && redPieces["1Y"] == yellowPieces["1Y"])){
+							yellowPieces[1+"X"] = yellowStartX;
+							yellowPieces[1+"Y"] = yellowStartY;
+						}
+						if((redPieces["1X"] == yellowPieces["2X"] && redPieces["1Y"] == yellowPieces["2Y"])){
+							yellowPieces[2+"X"] = yellowStartX;
+							yellowPieces[2+"Y"] = yellowStartY;
+						}
+						if((redPieces["1X"] == yellowPieces["3X"] && redPieces["1Y"] == yellowPieces["3Y"])){
+							yellowPieces[3+"X"] = yellowStartX;
+							yellowPieces[3+"Y"] = yellowStartY;
+						}
+						if((redPieces["1X"] == yellowPieces["4X"] && redPieces["1Y"] == yellowPieces["4Y"])){
+							yellowPieces[4+"X"] = yellowStartX;
+							yellowPieces[4+"Y"] = yellowStartY;
+						}
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece2.checked && ((redPieces["2X"] == redStartX && redPieces["2Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["2X"] = redStartExitX;
+						redPieces["2Y"] = redStartExitY;
+						redPiecesGrid[2] = 4;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						if((redPieces["2X"] == yellowPieces["1X"] && redPieces["2Y"] == yellowPieces["1Y"])){
+							yellowPieces[1+"X"] = yellowStartX;
+							yellowPieces[1+"Y"] = yellowStartY;
+						}
+						if((redPieces["2X"] == yellowPieces["2X"] && redPieces["2Y"] == yellowPieces["2Y"])){
+							yellowPieces[2+"X"] = yellowStartX;
+							yellowPieces[2+"Y"] = yellowStartY;
+						}
+						if((redPieces["2X"] == yellowPieces["3X"] && redPieces["2Y"] == yellowPieces["3Y"])){
+							yellowPieces[3+"X"] = yellowStartX;
+							yellowPieces[3+"Y"] = yellowStartY;
+						}
+						if((redPieces["2X"] == yellowPieces["4X"] && redPieces["2Y"] == yellowPieces["4Y"])){
+							yellowPieces[4+"X"] = yellowStartX;
+							yellowPieces[4+"Y"] = yellowStartY;
+						}
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece3.checked && ((redPieces["3X"] == redStartX && redPieces["3Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["3X"] = redStartExitX;
+						redPieces["3Y"] = redStartExitY;
+						redPiecesGrid[3] = 4;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						if((redPieces["3X"] == yellowPieces["1X"] && redPieces["3Y"] == yellowPieces["1Y"])){
+							yellowPieces[1+"X"] = yellowStartX;
+							yellowPieces[1+"Y"] = yellowStartY;
+						}
+						if((redPieces["3X"] == yellowPieces["2X"] && redPieces["3Y"] == yellowPieces["2X"])){
+							yellowPieces[2+"X"] = yellowStartX;
+							yellowPieces[2+"Y"] = yellowStartY;
+						}
+						if((redPieces["3X"] == yellowPieces["3X"] && redPieces["3Y"] == yellowPieces["3X"])){
+							yellowPieces[3+"X"] = yellowStartX;
+							yellowPieces[3+"Y"] = yellowStartY;
+						}
+						if((redPieces["3X"] == yellowPieces["4X"] && redPieces["3Y"] == yellowPieces["4Y"])){
+							yellowPieces[4+"X"] = yellowStartX;
+							yellowPieces[4+"Y"] = yellowStartY;
+						}
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece4.checked && ((redPieces["4X"] == redStartX && redPieces["4Y"] == redStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["4X"] = redStartExitX;
+						redPieces["4Y"] = redStartExitY;
+						redPiecesGrid[4] = 4;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						if((redPieces["1X"] == yellowPieces["1X"] && redPieces["4Y"] == yellowPieces["1Y"])){
+							yellowPieces[1+"X"] = yellowStartX;
+							yellowPieces[1+"Y"] = yellowStartY;
+						}
+						if((redPieces["1X"] == yellowPieces["2X"] && redPieces["4Y"] == yellowPieces["2Y"])){
+							yellowPieces[2+"X"] = yellowStartX;
+							yellowPieces[2+"Y"] = yellowStartY;
+						}
+						if((redPieces["1X"] == yellowPieces["3X"] && redPieces["4Y"] == yellowPieces["3Y"])){
+							yellowPieces[3+"X"] = yellowStartX;
+							yellowPieces[3+"Y"] = yellowStartY;
+						}
+						if((redPieces["1X"] == yellowPieces["4X"] && redPieces["4Y"] == yellowPieces["4Y"])){
+							yellowPieces[4+"X"] = yellowStartX;
+							yellowPieces[4+"Y"] = yellowStartY;
+						}
+						clearInterval(selectingInterval);
+					}
+				},0);
+			
+			redraw();
+		}else if(drawnCard == 0){
+			document.getElementById("log").innerHTML+="Red needs to pick an opposing piece to knock to start!\n\n";
+			if(!(yellowPieces[1+"X"] == yellowStartX && yellowPieces[1+"Y"] == yellowStartY) || !(yellowPieces[2+"X"] == yellowStartX && yellowPieces[2+"Y"] == yellowStartY) || !(yellowPieces[3+"X"] == yellowStartX && yellowPieces[3+"Y"] == yellowStartY) || !(yellowPieces[4+"X"] == yellowStartX && yellowPieces[4+"Y"] == yellowStartY)){
+				yellowPieceOut = true;
+			}
+			if(!yellowPieceOut){
+				document.getElementById("log").innerHTML+="...but there are none!\n\n";
+			}else{
+				document.getElementById("log").innerHTML+="Red, please press "+ ((yellowPieces[1+"X"] == yellowStartX && yellowPieces[1+"Y"] == yellowStartY) ? "" : "1, ") + ((yellowPieces[2+"X"] == yellowStartX && yellowPieces[2+"Y"] == yellowStartY) ? "" : " 2, ") + ((yellowPieces[3+"X"] == yellowStartX && yellowPieces[3+"Y"] == yellowStartY) ? "" : " 3, ") + ((yellowPieces[4+"X"] == yellowStartX && yellowPieces[4+"Y"] == yellowStartY) ? "" : " 4, ") + "on the keyboard to pick an opposing player\n\n";
+				gameMode = "selecting";
+				document.pieceselect.hidden = false;
+				selectingInterval = setInterval(function(){
+					if(document.pieceselect.piece1.checked && (!(yellowPieces[1+"X"] == yellowStartX && yellowPieces[1+"Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["1X"] = yellowPieces["1X"];
+						redPieces["1Y"] = yellowPieces["1Y"];
+						yellowPieces["1X"] = yellowStartX;
+						yellowPieces["1Y"] = yellowStartY;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece2.checked && (!(yellowPieces[2+"X"] == yellowStartX && yellowPieces[2+"Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["2X"] = yellowPieces["2X"];
+						redPieces["2Y"] = yellowPieces["2Y"];
+						yellowPieces["2X"] = yellowStartX;
+						yellowPieces["2Y"] = yellowStartY;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece3.checked && (!(yellowPieces[3+"X"] == yellowStartX && yellowPieces[3+"Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["3X"] = yellowPieces["3X"];
+						redPieces["3Y"] = yellowPieces["3Y"];
+						yellowPieces["3X"] = yellowStartX;
+						yellowPieces["3Y"] = yellowStartY;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+					if(document.pieceselect.piece4.checked && (!(yellowPieces[4+"X"] == yellowStartX && yellowPieces[4+"Y"] == yellowStartY))){
+						document.pieceselect.piece1.checked = false;
+						document.pieceselect.piece2.checked = false;
+						document.pieceselect.piece3.checked = false;
+						document.pieceselect.piece4.checked = false;
+						document.pieceselect.hidden = true;
+						redPieces["4X"] = yellowPieces["4X"];
+						redPieces["4Y"] = yellowPieces["4Y"];
+						yellowPieces["4X"] = yellowStartX;
+						yellowPieces["4Y"] = yellowStartY;
+						gameMode = "waiting"
+						charStr = '';
+						wait();
+						clearInterval(selectingInterval);
+					}
+				},0);
+			}
+		}else{
+			document.getElementById("log").innerHTML+="Red cannot move!\n\n";
+		}
+		}else{
+			//TODO: movement
+		}
+		
+		if(gameMode == "running"){
+			gameMode = "waiting";
+			wait();
+		}
+	}
+}
+
+},500);
+
+//ctx.drawImage();
+}
+
+function scroll(){
+	self.scrollTop = self.scrollHeight;
+}
+
+</script>
+<title>Welcome to Sorry!</title>
+</head>
+
+<body background="gr/page/bg.png" onLoad="load()">
+
+<h1 id="playertext" align="center">Loading...</h1>
+
+<img src="gr/game/red1.png" id="redPiece1" width="0" height="0">
+<img src="gr/game/red2.png" id="redPiece2" width="0" height="0">
+<img src="gr/game/red3.png" id="redPiece3" width="0" height="0">
+<img src="gr/game/red4.png" id="redPiece4" width="0" height="0">
+<img src="gr/game/blue.png" id="bluePiece" width="0" height="0">
+<img src="gr/game/green.png" id="greenPiece" width="0" height="0">
+<img src="gr/game/yellow1.png" id="yellowPiece1" width="0" height="0">
+<img src="gr/game/yellow2.png" id="yellowPiece2" width="0" height="0">
+<img src="gr/game/yellow3.png" id="yellowPiece3" width="0" height="0">
+<img src="gr/game/yellow4.png" id="yellowPiece4" width="0" height="0">
+<img src="gr/game/board.png" id="board" width="0" height="0">
+<img src="gr/game/loading.png" id="loading" width="512" height="510" hidden>
+
+<span><canvas width="512" height="510" id="display">Your browser needs to support HTML5 canvas to play Sorry!</canvas>
+<img src="gr/game/cards/backe.jpg" id="card" width="197" height="300">
+<textarea cols="50" rows="30" id="log"></textarea></span>
+</body>
+
+<center>
+<form name="pieceselect" style="background-color:#ffffff; width:600px; margin: auto;"" hidden>
+<span><input type="checkbox" name="piece1">Piece 1<input type="checkbox" name="piece2">Piece 2<input type="checkbox" name="piece3">Piece 3<input type="checkbox" name="piece4">Piece 4</span>
+</form>
+</center>
+
+<center>
+<form name="confirm" style="background-color:#ffffff; width:600px; margin: auto;"" hidden>
+<span><input type="checkbox" name="confirmcheck">Confirm</span>
+</form>
+</center>
+
+<footer>
+<br>
+<p align="center" style="background-color:#ffffff; width:600px; margin: auto;"><i>Last updated 12/11/17 by Joshua S. Version a0.1.0 -- refer to changelog.txt</i></p>
+</footer>
+</html>
